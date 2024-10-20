@@ -33,14 +33,13 @@ This Streamlit application extracts transaction details from uploaded image file
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables**:
-   - Create a `.env` file in the root directory with the following content:
-     ```plaintext
-     ENVIRONMENT=dev
-     # Only the model file id need for production
-     MODEL_FILE_ID=your_google_drive_file_id
+3. **Set up secrets**:
+   - Create a `secrets.toml` file in the root directory with the following content:
+     ```toml
+     [general]
+     ENVIRONMENT = "production"
+     MODEL_FILE_ID = "your_google_drive_file_id"
      ```
-     Here is the link for the current model file https://drive.google.com/file/d/1aXlpnWGK5PPCuFvu7zJezPAmsR3wmdYe/view?usp=sharing
 
 4. **Configure Tesseract**:
    - Ensure Tesseract is installed and the path is set in the script if necessary:
@@ -64,6 +63,15 @@ This Streamlit application extracts transaction details from uploaded image file
 
 4. **Download Excel**:
    - Use the download button to export the transaction details to an Excel file.
+
+## Configuration
+
+- **Environment Variables**: The application uses `st.secrets` to manage sensitive information like the `ENVIRONMENT` and `MODEL_FILE_ID`. Ensure these are correctly set in the `secrets.toml` file.
+
+## Model File
+
+- The current model file can be accessed and downloaded from Google Drive using the following link:
+  [Model File](https://drive.google.com/file/d/1aXlpnWGK5PPCuFvu7zJezPAmsR3wmdYe/view?usp=sharing)
 
 ## Logging
 

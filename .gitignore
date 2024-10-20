@@ -165,3 +165,5 @@ dummy_data/
 
 output.xlsx
 model/*
+
+.streamlit

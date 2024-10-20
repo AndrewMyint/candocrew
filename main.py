@@ -10,7 +10,6 @@ import pandas as pd
 import pytesseract as pyt
 import streamlit as st
 from dateutil import parser
-from dotenv import load_dotenv
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array, load_img
 from PIL import Image
@@ -21,7 +20,8 @@ logging.basicConfig(
 )
 
 
-load_dotenv()
+environment = st.secrets["general"]["ENVIRONMENT"]
+os.environ["ENVIRONMENT"] = environment
 
 logging.info(f"Loading dependencies... {os.getenv('ENVIRONMENT')}")
 logging.info(f"Loading dependencies... {os.getenv('MODEL_FILE_ID')}")
@@ -30,31 +30,32 @@ logging.info(f"Loading dependencies... {os.getenv('MODEL_FILE_ID')}")
 # Function to download the model from Google Drive
 def download_model_from_drive(file_id, output_path):
     url = f"https://drive.google.com/uc?id={file_id}"
-    gdown.download(url, output_path, quiet=False)
-
-
-# Determine the environment
-environment = os.getenv(
-    "ENVIRONMENT",
-)
-
-if environment is None:
-    raise ValueError(
-        "The ENVIRONMENT variable is not set. Please define it in the .env file."
-    )
+    logging.info(f"Downloading model from {url} to {output_path}")
+    try:
+        gdown.download(url, output_path, quiet=False)
+        logging.info("Download completed.")
+    except Exception as e:
+        logging.error(f"Failed to download model: {e}")
 
 
 # Set model path based on environment
 if environment == "production":
+    logging.info("Running in production environment.")
     model_dir = "model/cnn_b5.h5"
     if not os.path.exists(model_dir):
-        # Get the Google Drive file ID from the environment
-        file_id = os.getenv("MODEL_FILE_ID")
+        logging.info("Model file does not exist. Preparing to download.")
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(model_dir), exist_ok=True)
+
+        # Get the Google Drive file ID from Streamlit secrets
+        file_id = st.secrets["general"]["MODEL_FILE_ID"]
         if file_id:
             logging.info("Downloading model from Google Drive...")
             download_model_from_drive(file_id, model_dir)
         else:
-            raise ValueError("Google Drive file ID is not set in the environment.")
+            raise ValueError("Google Drive file ID is not set in the secrets.")
+    else:
+        logging.info("Model file already exists. Skipping download.")
 else:
     # Local path for development
     model_dir = "model/cnn_b5.h5"

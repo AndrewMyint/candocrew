@@ -7,3 +7,5 @@ Pillow
 XlsxWriter
 keras
 tensorflow
+gdown
+python-dotenv

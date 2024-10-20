@@ -295,7 +295,7 @@ for filename in os.listdir(image_dir):
         try:
             # Extract text using Tesseract
             extracted_text = extract_text_from_image(image_path)
-            print(f"Extracted data from {filename}")
+            print(f"Extracted data from {extracted_text}")
             # print(f"Extracted data from {filename}: \n{extracted_text}\n")
 
             # Extract transaction information using regex

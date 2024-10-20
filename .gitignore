@@ -164,3 +164,4 @@ cython_debug/
 dummy_data/
 
 output.xlsx
+model/*

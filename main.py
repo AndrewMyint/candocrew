@@ -1,13 +1,16 @@
 import io
 import logging
+import os
 import re
 
 import cv2
+import gdown
 import numpy as np
 import pandas as pd
 import pytesseract as pyt
 import streamlit as st
 from dateutil import parser
+from dotenv import load_dotenv
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array, load_img
 from PIL import Image
@@ -16,6 +19,33 @@ from PIL import Image
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+load_dotenv()
+
+
+# Function to download the model from Google Drive
+def download_model_from_drive(file_id, output_path):
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, output_path, quiet=False)
+
+
+# Determine the environment
+environment = os.getenv("ENVIRONMENT", "local")  # Default to 'local' if not set
+
+# Set model path based on environment
+if environment == "production":
+    model_dir = "model/cnn_b5.h5"
+    if not os.path.exists(model_dir):
+        # Get the Google Drive file ID from the environment
+        file_id = os.getenv("MODEL_FILE_ID")
+        if file_id:
+            download_model_from_drive(file_id, model_dir)
+        else:
+            raise ValueError("Google Drive file ID is not set in the environment.")
+else:
+    # Local path for development
+    model_dir = "model/cnn_b5.h5"
 
 # Set Tesseract command path if needed
 # pyt.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Uncomment and set path if necessary
@@ -36,8 +66,15 @@ amount_only_pattern = re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$")
 model_dir = "model/cnn_b5.h5"
 class_labels = ["AYAPay", "CBPay", "KPay", "Other", "WavePay"]
 
+
+@st.cache_resource
+def load_cached_model(model_path: str):
+    """Load and cache the model."""
+    return load_model(model_path)
+
+
 # Load the pre-trained model
-loaded_model = load_model(model_dir)
+loaded_model = load_cached_model(model_dir)
 
 
 def extract_text_from_image(image):

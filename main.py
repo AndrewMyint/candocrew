@@ -33,7 +33,7 @@ amount_data_pattern = re.compile(r"^(Amount|Total Amount)\s?:?\s?(.+)")
 amount_only_pattern = re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$")
 
 # Classification model path
-model_dir = "/path/to/your/model/cnn_b5.h5"
+model_dir = "model/cnn_b5.h5"
 class_labels = ["AYAPay", "CBPay", "KPay", "Other", "WavePay"]
 
 # Load the pre-trained model
@@ -259,6 +259,7 @@ def main():
 
                 # Extract text from the image
                 extracted_text = extract_text_from_image(image_cv)
+                logging.info(f"Extracted data from {extracted_text}")
 
                 if extracted_text:
                     # Extract transaction details using regex

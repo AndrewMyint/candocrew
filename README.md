@@ -2,13 +2,14 @@
 
 # Transaction Details Extractor
 
-This project is a Streamlit application designed to extract transaction details from uploaded images using Optical Character Recognition (OCR) with Tesseract. The extracted data is displayed in a structured format and can be exported to an Excel file.
+This project is a Streamlit application designed to extract transaction details from uploaded images using Optical Character Recognition (OCR) with Tesseract. The application also classifies the payment type using a pre-trained model. The extracted data is displayed in a structured format and can be exported to an Excel file.
 
 ## Features
 
 - **Image Upload**: Upload multiple image files in PNG, JPG, or JPEG format.
 - **OCR Processing**: Extracts text from images using Tesseract OCR.
 - **Data Extraction**: Uses regular expressions to extract transaction details such as date, transaction number, amount, sender, receiver, and notes.
+- **Image Classification**: Classifies the payment type using a pre-trained model.
 - **Data Display**: Displays extracted data in a Streamlit DataFrame with customizable column configurations.
 - **Excel Export**: Allows users to download the extracted data as an Excel file.
 
@@ -16,7 +17,7 @@ This project is a Streamlit application designed to extract transaction details 
 
 1. **Clone the repository**:
    ```bash
-   https://github.com/AndrewMyint/candoall.git
+   git clone https://github.com/AndrewMyint/candoall.git
    cd candoall
    ```
 
@@ -36,6 +37,9 @@ This project is a Streamlit application designed to extract transaction details 
      ```bash
      sudo apt-get install tesseract-ocr
      ```
+
+4. **Download the Pre-trained Model**:
+   - Ensure the pre-trained model file `cnn_b5.h5` is placed in the `model` directory. You may need to download it from a cloud storage service or use Git LFS if it's stored in the repository.
 
 ## Usage
 
@@ -57,6 +61,7 @@ This project is a Streamlit application designed to extract transaction details 
 
 - `main.py`: The main application script.
 - `requirements.txt`: List of Python dependencies.
+- `model/cnn_b5.h5`: Pre-trained model for payment type classification.
 
 ## License
 
@@ -67,3 +72,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [Streamlit](https://streamlit.io/) for providing an easy-to-use framework for building web apps.
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for the OCR engine.
 - [Pandas](https://pandas.pydata.org/) for data manipulation and analysis.
+- [Keras](https://keras.io/) for the deep learning model used in image classification.

@@ -23,6 +23,9 @@ logging.basicConfig(
 
 load_dotenv()
 
+logging.info(f"Loading dependencies... {os.getenv('ENVIRONMENT')}")
+logging.info(f"Loading dependencies... {os.getenv('MODEL_FILE_ID')}")
+
 
 # Function to download the model from Google Drive
 def download_model_from_drive(file_id, output_path):
@@ -31,7 +34,15 @@ def download_model_from_drive(file_id, output_path):
 
 
 # Determine the environment
-environment = os.getenv("ENVIRONMENT", "local")  # Default to 'local' if not set
+environment = os.getenv(
+    "ENVIRONMENT",
+)
+
+if environment is None:
+    raise ValueError(
+        "The ENVIRONMENT variable is not set. Please define it in the .env file."
+    )
+
 
 # Set model path based on environment
 if environment == "production":

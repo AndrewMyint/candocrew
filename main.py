@@ -24,7 +24,6 @@ environment = st.secrets["general"]["ENVIRONMENT"]
 os.environ["ENVIRONMENT"] = environment
 
 logging.info(f"Loading dependencies... {os.getenv('ENVIRONMENT')}")
-logging.info(f"Loading dependencies... {os.getenv('MODEL_FILE_ID')}")
 
 
 # Function to download the model from Google Drive

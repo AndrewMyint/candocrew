@@ -51,6 +51,7 @@ if environment == "production":
         # Get the Google Drive file ID from the environment
         file_id = os.getenv("MODEL_FILE_ID")
         if file_id:
+            logging.info("Downloading model from Google Drive...")
             download_model_from_drive(file_id, model_dir)
         else:
             raise ValueError("Google Drive file ID is not set in the environment.")

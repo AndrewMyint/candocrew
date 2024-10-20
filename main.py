@@ -8,6 +8,8 @@ import pandas as pd
 import pytesseract as pyt
 import streamlit as st
 from dateutil import parser
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array, load_img
 from PIL import Image
 
 # Set up logging
@@ -28,6 +30,14 @@ transno_pattern = re.compile(r"^(Transaction No|Transaction ID)\s?:?\s?(.+)")
 receiver_pattern = re.compile(r"^(To|Receiver Name|Send To)\s?:?\s?(.+)")
 sender_pattern = re.compile(r"^(From|Sender Name|Send From)\s?:?\s?(.+)")
 amount_data_pattern = re.compile(r"^(Amount|Total Amount)\s?:?\s?(.+)")
+amount_only_pattern = re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$")
+
+# Classification model path
+model_dir = "/path/to/your/model/cnn_b5.h5"
+class_labels = ["AYAPay", "CBPay", "KPay", "Other", "WavePay"]
+
+# Load the pre-trained model
+loaded_model = load_model(model_dir)
 
 
 def extract_text_from_image(image):
@@ -189,7 +199,39 @@ def extract_transaction_data(text):
             notes_match = notes_pattern.search(line)
             transaction_data["Notes"] = notes_match.group(2).strip()
 
+        # Amount (if Amount Field does not exist.)
+        elif re.search(amount_only_pattern, line):
+            amount_only_pattern_match = amount_only_pattern.search(line)
+            amount_only_extracted = (
+                amount_only_pattern_match.group(1).replace("-", "").strip()
+            )
+            if transaction_data["Amount"] is None:
+                transaction_data["Amount"] = amount_only_extracted
+
     return transaction_data
+
+
+def load_and_preprocess_image(image_path, target_size=(270, 270)):
+    # Load the image
+    image = load_img(image_path, target_size=target_size)
+    # Convert the image to a numpy array
+    image = img_to_array(image)
+    # Expand dimensions to match the input shape of the model
+    image = np.expand_dims(image, axis=0)
+    # Normalize the image (if your model was trained on normalized data)
+    image /= 255.0
+    return image
+
+
+def predict_class(img_path, class_labels):
+    # Preprocess the image
+    image = load_and_preprocess_image(img_path)
+    # Make predictions
+    predictions = loaded_model.predict(image)
+    # Process the predictions
+    predicted_class = np.argmax(predictions, axis=1)
+    predicted_class = class_labels[predicted_class[0]]
+    return predicted_class
 
 
 def main():
@@ -223,6 +265,11 @@ def main():
                     transaction_details = extract_transaction_data(extracted_text)
                     transaction_details["image_file"] = uploaded_file.name
 
+                    # Predict payment type using image classification
+                    transaction_details["Payment Type"] = predict_class(
+                        uploaded_file, class_labels
+                    )
+
                     # Append the extracted details to the session state list
                     st.session_state.all_transaction_details.append(transaction_details)
                 else:
@@ -244,6 +291,7 @@ def main():
                 "Notes",
                 "image_file",
                 "Amount",
+                "Payment Type",
             ]
         ]
 
@@ -256,6 +304,7 @@ def main():
             "Notes",
             "Image File",
             "Amount",
+            "Payment Type",
         ]
 
         # Convert 'Amount' to numeric, handling any non-numeric values
@@ -279,6 +328,7 @@ def main():
                     format="%.2f",  # Format to two decimal places
                     min_value=0.0,  # Minimum value constraint
                 ),
+                "Payment Type": "Type",
             },
             hide_index=True,
         )

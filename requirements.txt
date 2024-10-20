@@ -5,3 +5,5 @@ opencv-python-headless
 pytesseract
 Pillow
 XlsxWriter
+keras
+tensorflow

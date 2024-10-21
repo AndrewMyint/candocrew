@@ -9,3 +9,6 @@ keras
 tensorflow
 gdown
 python-dotenv
+matplotlib
+torchvision
+torch

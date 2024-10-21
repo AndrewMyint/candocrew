@@ -7,12 +7,14 @@ import cv2
 import gdown
 import numpy as np
 import pandas as pd
-import pytesseract as pyt
 import streamlit as st
-from dateutil import parser
-from keras.models import load_model
-from keras.preprocessing.image import img_to_array, load_img
+import torch
+import torch.nn as nn
 from PIL import Image
+from torchvision import models
+
+from utils.classification import predict_class
+from utils.text_extraction import extract_text_from_image, extract_transaction_data
 
 # Set up logging
 logging.basicConfig(
@@ -40,7 +42,8 @@ def download_model_from_drive(file_id, output_path):
 # Set model path based on environment
 if environment == "production":
     logging.info("Running in production environment.")
-    model_dir = "model/cnn_b5.h5"
+    # model_dir = "model/cnn_b5.h5"
+    model_dir = "model/VGG16BatchNorm03.pth"
     if not os.path.exists(model_dir):
         logging.info("Model file does not exist. Preparing to download.")
         # Ensure the directory exists
@@ -57,7 +60,8 @@ if environment == "production":
         logging.info("Model file already exists. Skipping download.")
 else:
     # Local path for development
-    model_dir = "model/cnn_b5.h5"
+    # model_dir = "model/cnn_b5.h5"
+    model_dir = "model/VGG16BatchNorm03.pth"
 
 # Set Tesseract command path if needed
 # pyt.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Uncomment and set path if necessary
@@ -76,245 +80,33 @@ amount_data_pattern = re.compile(
 )  # [:\-–—]?: Matches an optional colon, dash, en dash, or em dash.
 amount_only_pattern = re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$")
 
-# Classification model path
-model_dir = "model/cnn_b5.h5"
 class_labels = ["AYAPay", "CBPay", "KPay", "Other", "WavePay"]
 
 
 @st.cache_resource
-def load_cached_model(model_path: str):
-    """Load and cache the model."""
-    return load_model(model_path)
-
-
-# Load the pre-trained model
-loaded_model = load_cached_model(model_dir)
-
-
-def extract_text_from_image(image):
+def load_model(model_path: str):
     """
-    Extracts text from an image using Tesseract OCR.
+    Load and cache the pre-trained model.
 
-    :param image: Image file
-    :return: Extracted text as a string, or None if extraction fails
+    Args:
+        model_path: Path to the model weights file.
+
+    Returns:
+        The loaded model.
     """
-    try:
-        # Convert the image to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # Apply a Gaussian blur to reduce noise and smoothen the image
-        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-
-        # Increase contrast using adaptive histogram equalization (CLAHE)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        enhanced_img = clahe.apply(blurred)
-
-        # Sharpen the image to make text more readable
-        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-        sharpened = cv2.filter2D(enhanced_img, -1, kernel)
-
-        # Apply a threshold to convert the image to binary (black and white)
-        _, thresh = cv2.threshold(
-            sharpened, 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
-
-        # Convert back to a PIL image
-        pil_image = Image.fromarray(thresh)
-
-        # Use Tesseract to do OCR on the image
-        config = "--psm 6"
-        text = pyt.image_to_string(pil_image, config=config, lang="eng")
-        return text
-
-    except Exception as e:
-        logging.error(f"Error processing image: {str(e)}")
-        return None
+    # Load the VGG model with pre-trained weights
+    model = models.vgg16_bn(pretrained=True)
+    # Update the classifier layer to match the number of class labels
+    model.classifier[6] = nn.Linear(4096, len(class_labels))
+    # Load your trained model weights
+    model.load_state_dict(torch.load(model_path))
+    # Set the model to evaluation mode
+    model.eval()
+    return model
 
 
-def split_text_into_lines(text):
-    """
-    Splits the extracted text into lines.
-
-    :param text: Extracted text
-    :return: List of non-empty lines
-    """
-    lines = text.split("\n")
-    return [line.strip() for line in lines if line.strip()]
-
-
-def extract_date_time(date_time_str):
-    """
-    Extracts date and time from the input string using regex and dateutil parser.
-
-    :param date_time_str: String containing date and time
-    :return: Formatted date and time
-    """
-    date_pattern = re.compile(
-        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2} \w+ \d{4}|\w+ \d{1,2}, \d{4})"
-    )
-    time_pattern = re.compile(
-        r"\b((1[0-2]|0?[1-9]):[0-5][0-9](?::[0-5][0-9])?\s?[APap][Mm]|(2[0-3]|[01]?[0-9]):[0-5][0-9](?::[0-5][0-9])?)\b"
-    )
-
-    try:
-        date_match = date_pattern.search(date_time_str)
-        times_match = time_pattern.search(date_time_str)
-
-        formatted_date = (
-            parser.parse(date_match.group()).strftime("%Y/%m/%d") if date_match else ""
-        )
-        formatted_time = (
-            parser.parse(times_match.group()).strftime("%H:%M:%S")
-            if times_match
-            else ""
-        )
-
-    except Exception as e:
-        logging.error(f"Error parsing date or time: {e}")
-        formatted_date, formatted_time = "", ""
-
-    return formatted_date, formatted_time
-
-
-def extract_amount_only(amount_str):
-    """
-    Extracts numeric amount from the amount string using regex.
-
-    :param amount_str: amount with negative sign, MMK, Ks
-    :return: numeric amount as a string
-    """
-    amount_only_pattern = re.compile(r"-?\d*(?:,\d*)*(?:\.\d{2})?")
-    amount_pattern_match = amount_only_pattern.search(amount_str)
-
-    return (
-        amount_pattern_match.group().replace("-", "").strip()
-        if amount_pattern_match
-        else amount_str
-    )
-
-
-def extract_transaction_data(text):
-    """
-    Extracts transaction details from the given text.
-
-    :param text: Text extracted from an image
-    :return: Dictionary of extracted transaction details
-    """
-    transaction_data = {
-        "Transaction No": None,
-        "Transaction Date": None,
-        "Transaction Type": None,
-        "Sender Name": None,
-        "Amount": None,
-        "Receiver Name": None,
-        "Notes": None,
-    }
-    lines = split_text_into_lines(text)
-    for line in lines:
-        logging.info(f"Processing line: {line}")
-
-        # Normalize line
-        normalized_line = re.sub(r"\s+", " ", line).strip()
-        logging.debug(f"Normalized line: {normalized_line}")
-
-        # Transaction Time
-        if re.search(transtime_pattern, normalized_line):
-            transtime_pattern_match = transtime_pattern.search(normalized_line)
-            date_time_str = transtime_pattern_match.group(2).strip()
-            transaction_data["Transaction Date"], _ = extract_date_time(date_time_str)
-            logging.info(
-                f"Extracted Transaction Date: {transaction_data['Transaction Date']}"
-            )
-
-        # Transaction No
-        elif re.search(transno_pattern, normalized_line):
-            transno_pattern_match = transno_pattern.search(normalized_line)
-            transaction_data["Transaction No"] = transno_pattern_match.group(2).strip()
-            logging.info(
-                f"Extracted Transaction No: {transaction_data['Transaction No']}"
-            )
-
-        # Transaction Type
-        elif re.search(transtype_pattern, normalized_line):
-            transtype_pattern_match = transtype_pattern.search(normalized_line)
-            transaction_data["Transaction Type"] = transtype_pattern_match.group(
-                2
-            ).strip()
-            logging.info(
-                f"Extracted Transaction Type: {transaction_data['Transaction Type']}"
-            )
-
-        # Amounts
-        elif re.search(amount_data_pattern, normalized_line):
-            amount_data_pattern_match = amount_data_pattern.search(normalized_line)
-            amount_string = amount_data_pattern_match.group(2).strip()
-            transaction_data["Amount"] = extract_amount_only(amount_string)
-            logging.info(
-                f"Extracted Amount: {transaction_data['Amount']}, and length: {len(transaction_data['Amount'])}"
-            )
-            logging.info(f"Amount String: {transaction_data["Amount"] is None}")
-            logging.info(f"Amount Type: {type(transaction_data["Amount"])}")
-
-        # Sender Name
-        elif re.search(sender_pattern, normalized_line):
-            sender_pattern_match = sender_pattern.search(normalized_line)
-            transaction_data["Sender Name"] = sender_pattern_match.group(2).strip()
-            logging.info(f"Extracted Sender Name: {transaction_data['Sender Name']}")
-
-        # Receiver Name
-        elif re.search(receiver_pattern, normalized_line):
-            receiver_pattern_match = receiver_pattern.search(normalized_line)
-            transaction_data["Receiver Name"] = receiver_pattern_match.group(2).strip()
-            logging.info(
-                f"Extracted Receiver Name: {transaction_data['Receiver Name']}"
-            )
-
-        # Notes
-        elif re.search(notes_pattern, line):
-            notes_match = notes_pattern.search(line)
-            notes_content = notes_match.group(2).strip()
-            if notes_content:
-                transaction_data["Notes"] = notes_content
-            else:
-                transaction_data["Notes"] = None
-            logging.info(f"Extracted Notes: {transaction_data['Notes']}")
-
-        # Amount (if Amount Field does not exist.)
-        elif re.search(amount_only_pattern, normalized_line):
-            amount_only_pattern_match = amount_only_pattern.search(normalized_line)
-            amount_only_extracted = (
-                amount_only_pattern_match.group(1).replace("-", "").strip()
-            )
-            if transaction_data["Amount"] is None:
-                transaction_data["Amount"] = amount_only_extracted
-                logging.info(
-                    f"Extracted Amount (from amount only pattern): {transaction_data['Amount']}"
-                )
-
-    return transaction_data
-
-
-def load_and_preprocess_image(image_path, target_size=(270, 270)):
-    # Load the image
-    image = load_img(image_path, target_size=target_size)
-    # Convert the image to a numpy array
-    image = img_to_array(image)
-    # Expand dimensions to match the input shape of the model
-    image = np.expand_dims(image, axis=0)
-    # Normalize the image (if your model was trained on normalized data)
-    image /= 255.0
-    return image
-
-
-def predict_class(img_path, class_labels):
-    # Preprocess the image
-    image = load_and_preprocess_image(img_path)
-    # Make predictions
-    predictions = loaded_model.predict(image)
-    # Process the predictions
-    predicted_class = np.argmax(predictions, axis=1)
-    predicted_class = class_labels[predicted_class[0]]
-    return predicted_class
+# Use the cached model
+model = load_model(model_dir)
 
 
 def main():
@@ -351,7 +143,7 @@ def main():
 
                     # Predict payment type using image classification
                     transaction_details["Payment Type"] = predict_class(
-                        uploaded_file, class_labels
+                        model, uploaded_file, class_labels
                     )
 
                     # Append the extracted details to the session state list

@@ -34,7 +34,7 @@ This Streamlit application extracts transaction details from uploaded image file
    ```
 
 3. **Set up secrets**:
-   - Create a `secrets.toml` file in the root directory with the following content:
+   - Create a `.streamlit/secrets.toml` file in the root directory with the following content:
      ```toml
      [general]
      ENVIRONMENT = "production"

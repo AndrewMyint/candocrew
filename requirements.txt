@@ -12,3 +12,4 @@ python-dotenv
 matplotlib
 torchvision
 torch
+textblob

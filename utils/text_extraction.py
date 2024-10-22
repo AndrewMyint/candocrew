@@ -96,6 +96,10 @@ def correct_month_in_string(date_string):
             return date_string.replace(incorrect_month, correct_month)
     return date_string
 
+def spell_check_string(text):
+    corrected_text = str(TextBlob(text).correct())
+    return corrected_text
+
 def extract_date_time(date_time_str):
     """
     Extracts date and time from the input string using regex and dateutil parser.

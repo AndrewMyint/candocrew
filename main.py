@@ -7,7 +7,11 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-from page import text_extraction_page, transaction_details_extractor
+from page import (
+    classification_page,
+    text_extraction_page,
+    transaction_details_extractor,
+)
 from utils.constant import CLASS_LABELS
 
 # Set up logging
@@ -80,20 +84,31 @@ model = load_cached_model(model_dir)
 def main():
     # Define the pages
     pages = {
-        "Transaction Details Extractor": transaction_details_extractor,
         "Image to Text Extraction Demo": text_extraction_page,
-        "Demo Page": None,  # Placeholder for other pages
+        "Transaction Details Extractor": transaction_details_extractor,
+        "Image Classification": classification_page,  # Add the classification page
+        "Demo Page": None,
     }
 
-    st.sidebar.markdown("## Main Menu")
-    # Sidebar for page selection
+    st.sidebar.markdown("## SNAPSHEET")
     selected_page = st.sidebar.selectbox("Select a page", list(pages.keys()))
+
+    page_info = {
+        "Image to Text Extraction Demo": "Demonstrates image to text extraction using Tesseract OCR.",
+        "Transaction Details Extractor": "Extracts transaction details from images using OCR and displays them.",
+        "Image Classification": "Classifies images using a pre-trained model.",  # Add description
+        "Demo Page": "This is a demo page. Add your content here.",
+    }
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(f"**Note:** {page_info[selected_page]}")
 
     # Render the selected page
     if selected_page == "Transaction Details Extractor":
         transaction_details_extractor.render(model)
     elif selected_page == "Image to Text Extraction Demo":
         text_extraction_page.render()
+    elif selected_page == "Image Classification":
+        classification_page.render(model)  # Render the classification page
     elif selected_page == "Demo Page":
         st.title("Demo Page")
         st.write("This is a demo page. Add your content here.")

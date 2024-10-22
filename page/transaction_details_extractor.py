@@ -41,7 +41,7 @@ def render(model):
                 image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
                 # Extract text from the image
-                extracted_text = extract_text_from_image(image_cv)
+                extracted_text, _ = extract_text_from_image(image_cv)
                 logging.info(f"Extracted data from {extracted_text}")
 
                 if extracted_text:

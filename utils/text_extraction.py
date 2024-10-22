@@ -8,18 +8,20 @@ from dateutil import parser
 from PIL import Image
 
 # Regular expression patterns for extracting fields
-transtype_pattern = re.compile(r"^(Transaction Type|Type)\s?:?\s?(.+)")
-notes_pattern = re.compile(r"^(Notes|Note|Purpose|Reason|Remarks)\s?:?\s?(.*)")
-transtime_pattern = re.compile(
-    r"^(Transaction Time|Date and Time|Date & Time|Transaction Date)\s?:?\s?(.+)"
-)
-transno_pattern = re.compile(r"^(Transaction No.|Transaction ID)\s?:?\s?(.+)")
-receiver_pattern = re.compile(r"^(To|Receiver Name|Send To|Transfer To)\s?:?\s?(.+)")
-sender_pattern = re.compile(r"^(From|Sender Name|Send From|Transfer From)\s?:?\s?(.+)")
-amount_data_pattern = re.compile(
-    r"^(Amount|Total Amount|Total)\s*[:\-–—]?\s*(.+)"
-)  # [:\-–—]?: Matches an optional colon, dash, en dash, or em dash.
-amount_only_pattern = re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$")
+patterns = {
+    "transaction_type": re.compile(r"^(Transaction Type|Type)\s?:?\s?(.+)"),
+    "notes": re.compile(r"^(Notes|Note|Purpose|Reason|Remarks)\s?:?\s?(.*)"),
+    "transaction_time": re.compile(
+        r"^(Transaction Time|Date and Time|Date & Time|Transaction Date)\s?:?\s?(.+)"
+    ),
+    "transaction_no": re.compile(r"^(Transaction No.|Transaction ID)\s?:?\s?(.+)"),
+    "receiver": re.compile(r"^(To|Receiver Name|Send To|Transfer To)\s?:?\s?(.+)"),
+    "sender": re.compile(r"^(From|Sender Name|Send From|Transfer From)\s?:?\s?(.+)"),
+    "amount_data": re.compile(
+        r"^(Amount|Total Amount|Total)\s*[:\-–—]?\s*(.+)"
+    ),  # [:\-–—]?: Matches an optional colon, dash, en dash, or em dash.
+    "amount_only": re.compile(r"(\d*(?:,\d*)*(?:\.\d*)?)\s?(MMK|Ks)$"),
+}
 
 
 def extract_text_from_image(image):
@@ -38,6 +40,9 @@ def extract_text_from_image(image):
 
         # Increase contrast using adaptive histogram equalization (CLAHE)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+
+        logging.info(f"Enhancing image using CLAHE {clahe}")
+
         enhanced_img = clahe.apply(blurred)
 
         # Sharpen the image to make text more readable
@@ -55,7 +60,13 @@ def extract_text_from_image(image):
         # Use Tesseract to do OCR on the image
         config = "--psm 6"
         text = pyt.image_to_string(pil_image, config=config, lang="eng")
-        return text
+        return text, [
+            gray,
+            blurred,
+            enhanced_img,
+            sharpened,
+            thresh,
+        ]
 
     except Exception as e:
         logging.error(f"Error processing image: {str(e)}")
@@ -140,7 +151,9 @@ def extract_transaction_data(text):
         "Receiver Name": None,
         "Notes": None,
     }
+
     lines = split_text_into_lines(text)
+
     for line in lines:
         logging.info(f"Processing line: {line}")
 
@@ -148,78 +161,58 @@ def extract_transaction_data(text):
         normalized_line = re.sub(r"\s+", " ", line).strip()
         logging.debug(f"Normalized line: {normalized_line}")
 
-        # Transaction Time
-        if re.search(transtime_pattern, normalized_line):
-            transtime_pattern_match = transtime_pattern.search(normalized_line)
-            date_time_str = transtime_pattern_match.group(2).strip()
-            transaction_data["Transaction Date"], _ = extract_date_time(date_time_str)
-            logging.info(
-                f"Extracted Transaction Date: {transaction_data['Transaction Date']}"
-            )
+        # Loop through each pattern in the patterns dictionary
+        for field, pattern in patterns.items():
+            match = pattern.search(normalized_line)
 
-        # Transaction No
-        elif re.search(transno_pattern, normalized_line):
-            transno_pattern_match = transno_pattern.search(normalized_line)
-            transaction_data["Transaction No"] = transno_pattern_match.group(2).strip()
-            logging.info(
-                f"Extracted Transaction No: {transaction_data['Transaction No']}"
-            )
+            if match:
+                if field == "transaction_time":
+                    date_time_str = match.group(2).strip()
+                    transaction_data["Transaction Date"], _ = extract_date_time(
+                        date_time_str
+                    )
+                    logging.info(
+                        f"Extracted Transaction Date: {transaction_data['Transaction Date']}"
+                    )
 
-        # Transaction Type
-        elif re.search(transtype_pattern, normalized_line):
-            transtype_pattern_match = transtype_pattern.search(normalized_line)
-            transaction_data["Transaction Type"] = transtype_pattern_match.group(
-                2
-            ).strip()
-            logging.info(
-                f"Extracted Transaction Type: {transaction_data['Transaction Type']}"
-            )
+                elif field == "transaction_no":
+                    transaction_data["Transaction No"] = match.group(2).strip()
+                    logging.info(
+                        f"Extracted Transaction No: {transaction_data['Transaction No']}"
+                    )
 
-        # Amounts
-        elif re.search(amount_data_pattern, normalized_line):
-            amount_data_pattern_match = amount_data_pattern.search(normalized_line)
-            amount_string = amount_data_pattern_match.group(2).strip()
-            transaction_data["Amount"] = extract_amount_only(amount_string)
-            logging.info(
-                f"Extracted Amount: {transaction_data['Amount']}, and length: {len(transaction_data['Amount'])}"
-            )
-            logging.info(f"Amount String: {transaction_data["Amount"] is None}")
-            logging.info(f"Amount Type: {type(transaction_data["Amount"])}")
+                elif field == "transaction_type":
+                    transaction_data["Transaction Type"] = match.group(2).strip()
+                    logging.info(
+                        f"Extracted Transaction Type: {transaction_data['Transaction Type']}"
+                    )
 
-        # Sender Name
-        elif re.search(sender_pattern, normalized_line):
-            sender_pattern_match = sender_pattern.search(normalized_line)
-            transaction_data["Sender Name"] = sender_pattern_match.group(2).strip()
-            logging.info(f"Extracted Sender Name: {transaction_data['Sender Name']}")
+                elif field == "amount_data":
+                    amount_string = match.group(2).strip()
+                    transaction_data["Amount"] = extract_amount_only(amount_string)
+                    logging.info(f"Extracted Amount: {transaction_data['Amount']}")
 
-        # Receiver Name
-        elif re.search(receiver_pattern, normalized_line):
-            receiver_pattern_match = receiver_pattern.search(normalized_line)
-            transaction_data["Receiver Name"] = receiver_pattern_match.group(2).strip()
-            logging.info(
-                f"Extracted Receiver Name: {transaction_data['Receiver Name']}"
-            )
+                elif field == "sender":
+                    transaction_data["Sender Name"] = match.group(2).strip()
+                    logging.info(
+                        f"Extracted Sender Name: {transaction_data['Sender Name']}"
+                    )
 
-        # Notes
-        elif re.search(notes_pattern, line):
-            notes_match = notes_pattern.search(line)
-            notes_content = notes_match.group(2).strip()
-            if notes_content:
-                transaction_data["Notes"] = notes_content
-            else:
-                transaction_data["Notes"] = None
-            logging.info(f"Extracted Notes: {transaction_data['Notes']}")
+                elif field == "receiver":
+                    transaction_data["Receiver Name"] = match.group(2).strip()
+                    logging.info(
+                        f"Extracted Receiver Name: {transaction_data['Receiver Name']}"
+                    )
 
-        # Amount (if Amount Field does not exist.)
-        elif re.search(amount_only_pattern, normalized_line):
-            amount_only_pattern_match = amount_only_pattern.search(normalized_line)
-            amount_only_extracted = (
-                amount_only_pattern_match.group(1).replace("-", "").strip()
-            )
-            if transaction_data["Amount"] is None:
-                transaction_data["Amount"] = amount_only_extracted
-                logging.info(
-                    f"Extracted Amount (from amount only pattern): {transaction_data['Amount']}"
-                )
+                elif field == "notes":
+                    notes_content = match.group(2).strip()
+                    transaction_data["Notes"] = notes_content or None
+                    logging.info(f"Extracted Notes: {transaction_data['Notes']}")
+
+                elif field == "amount_only" and transaction_data["Amount"] is None:
+                    transaction_data["Amount"] = match.group(1).replace("-", "").strip()
+                    logging.info(
+                        f"Extracted Amount (from amount only pattern): {transaction_data['Amount']}"
+                    )
 
     return transaction_data

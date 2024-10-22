@@ -16,57 +16,100 @@ logging.basicConfig(
 
 
 def render(model):
-    st.markdown("## Image Classification")
+    st.markdown("""
+        ## 🖼️ Image Classification
+        Using VGG16 with Batch Normalization
+    """)
+
+    # # Supported Payment Methods
+    # st.markdown(
+    #     """
+    # <div style='margin: 1em 0;'>
+    #     <span style='font-weight: bold;'>Supported Payment Methods:</span>
+    #     <span class='payment-badge'> KBZPay</span>
+    #     <span class='payment-badge'> AYAPay</span>
+    #     <span class='payment-badge'> CBPay</span>
+    #     <span class='payment-badge'> WaveMoney</span>
+    # </div>
+    # """,
+    #     unsafe_allow_html=True,
+    # )
+
+    # Model Architecture Information
+    with st.expander("ℹ️ About the Model"):
+        st.markdown("""
+            ### Model Architecture
+            We use a VGG16 architecture with batch normalization, which is:
+            - A deep convolutional neural network
+            - 16 layers deep (13 convolutional layers + 3 fully connected layers)
+            - Enhanced with batch normalization for better training stability
+            
+            ### Key Features
+            - **Batch Normalization**: Normalizes the input of each layer, reducing internal covariate shift
+            - **Transfer Learning**: Pre-trained on ImageNet and fine-tuned for our specific classes
+            - **Input Size**: 224x224 pixels with 3 color channels (RGB)
+        """)
+
     st.markdown("---")
 
+    # File Upload Section with Enhanced UI
+    st.markdown("### 📤 Upload Image")
     uploaded_file = st.file_uploader(
-        "Upload an image file (PNG, JPG, or JPEG)",
+        "Select an image file (PNG, JPG, or JPEG)",
         accept_multiple_files=False,
         type=["png", "jpg", "jpeg"],
     )
 
     if uploaded_file:
         try:
-            # Read the image file
+            # Read and display the image
             original_image = Image.open(uploaded_file)
-
-            # Display the original image
             st.image(
                 original_image,
                 caption="Uploaded Image",
                 width=300,
             )
 
-            # Initialize session state for classification
+            # Initialize session state
             if "predicted_class" not in st.session_state:
                 st.session_state.predicted_class = None
 
-            # Explanation of the classification process
-            st.markdown("### How Image Classification Works")
-            st.markdown("""
-                1. **Image Upload**: You upload an image file which is displayed above.
-                2. **Preprocessing**: The image is resized and normalized to fit the model's input requirements.
-                3. **Model Prediction**: The preprocessed image is fed into a pre-trained model to predict the class.
-                4. **Confidence Scores**: The model outputs scores for each class, which are visualized in a bar chart.
-                5. **Class Selection**: The class with the highest score is selected as the predicted class.
-            """)
+            # Detailed Process Explanation
+            st.markdown("### 🔄 Classification Process")
+            with st.expander("View Detailed Process"):
+                st.markdown("""
+                    #### 1. Image Preprocessing
+                    - **Resize**: Image is resized to 224x224 pixels
+                    - **Normalization**: Pixel values are normalized using ImageNet statistics
+                        - Mean: [0.485, 0.456, 0.406]
+                        - Std: [0.229, 0.224, 0.225]
+                    
+                    #### 2. Model Architecture
+                    The VGG16-BN processes the image through:
+                    - Multiple convolutional layers with 3x3 filters
+                    - Batch normalization after each conv layer
+                    - Max pooling layers
+                    - Three fully connected layers
+                    
+                    #### 3. Output Interpretation
+                    - Model outputs confidence scores for each class
+                    - Softmax function converts scores to probabilities
+                    - Highest probability determines the predicted class
+                """)
 
-            # Classify Image
-            st.markdown("---")
-            if st.button("Classify Image"):
-                with st.spinner("Classifying image..."):
+            # Classification Section
+            st.markdown("### 🎯 Classification")
+            if st.button("Classify Image", key="classify_btn"):
+                with st.spinner("Processing image through VGG16-BN..."):
                     time.sleep(2)
-                    # Check for GPU
                     device = torch.device(
                         "cuda" if torch.cuda.is_available() else "cpu"
                     )
                     model = model.to(device)
-
-                    # Switch to evaluation mode
                     model.eval()
 
                     with torch.no_grad():
-                        # Preprocess the image
+                        # Preprocessing pipeline
                         img_transform = transforms.Compose(
                             [
                                 transforms.Resize(224),
@@ -79,37 +122,44 @@ def render(model):
                             ]
                         )
 
-                        # Apply preprocessing
-                        img_transform = img_transform(
-                            original_image
-                        )  # torch.Size([3, 224, 224])
-
+                        # Transform and predict
+                        img_transform = img_transform(original_image)
                         input_data = img_transform.unsqueeze(0)
-                        # Make predictions
                         predicted = model(input_data)
 
-                        st.write("Predicted scores:", predicted)
-
-                        # Assuming predicted is a tensor of shape (1, num_classes)
+                        # Process and display results
                         scores = predicted.cpu().numpy().flatten()
                         df = pd.DataFrame(
                             scores, index=CLASS_LABELS, columns=["Confidence"]
                         )
+
+                        # Display confidence scores
+                        st.markdown("### 📊 Confidence Scores")
                         st.bar_chart(df)
 
-                        # Get the predicted class
+                        # Get and display predicted class
                         _, pred_label = torch.max(predicted, 1)
-
-                        # Convert index to class name
                         label_name = CLASS_LABELS[pred_label.item()]
-
-                        # Update session state
                         st.session_state.predicted_class = label_name
                         logging.info(f"Predicted class: {label_name}")
 
-            # Display the predicted class
+            # Display prediction result
             if st.session_state.predicted_class:
-                st.markdown(f"**Predicted Class:** {st.session_state.predicted_class}")
+                st.markdown("### 🎉 Result")
+                st.success(f"Predicted Class: **{st.session_state.predicted_class}**")
+
+            # Technical Details
+            with st.expander("🔍 Technical Details"):
+                # Create the technical details text with proper formatting
+                technical_details = f"""
+                    ### Model Parameters
+                    - **Architecture**: VGG16 with Batch Normalization
+                    - **Input Resolution**: 224x224 pixels
+                    - **Number of Classes**: {len(CLASS_LABELS)}
+                    - **Device**: {str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))}
+                """
+                st.markdown(technical_details)
 
         except Exception as e:
-            st.error(f"Error processing the image: {e}")
+            st.error(f"⚠️ Error processing the image: {e}")
+            logging.error(f"Error during image processing: {e}")

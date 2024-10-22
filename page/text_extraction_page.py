@@ -15,11 +15,61 @@ logging.basicConfig(
 
 
 def render():
-    st.markdown("## Image to Text Extraction")
+    # Page Header with Icon
+    st.markdown(
+        """
+        <div style='display: flex; align-items: center; gap: 10px;'>
+            <img src='https://cdn-icons-png.flaticon.com/512/5262/5262072.png' width='40'/>
+            <h2>Image to Text Extraction Demo</h2>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Introduction
+    st.markdown("""
+    This demo showcases the process of extracting text from images using advanced OCR techniques. 
+    We'll walk through each step of the process, from preprocessing to final text extraction.
+    
+    ### How it works:
+    1. **Image Preprocessing**: We enhance image quality through multiple steps
+    2. **OCR Processing**: Using Tesseract OCR engine for text extraction
+    3. **Data Parsing**: Structured information extraction using regex patterns
+    """)
+
+    # # Supported Payment Methods
+    # st.markdown(
+    #     """
+    # <div style='margin: 1em 0;'>
+    #     <span style='font-weight: bold;'>Supported Payment Methods:</span>
+    #     <span class='payment-badge'>🏦 KBZPay</span>
+    #     <span class='payment-badge'>💳 AYAPay</span>
+    # </div>
+    # """,
+    #     unsafe_allow_html=True,
+    # )
+
     st.markdown("---")
 
+    # File Upload Section with Information
+    st.markdown(
+        """
+        <div style='background-color: rgba(61, 157, 243, 0.2); color: rgb(199, 235, 255); padding: 20px; border-radius: 10px;'>
+            <h4>📁 Upload Your Image</h4>
+            <p>Support formats: PNG, JPG, or JPEG</p>
+            <p>For best results, ensure your image:</p>
+            <ul>
+                <li>Has good lighting and contrast</li>
+                <li>Text is clearly visible</li>
+                <li>Minimal background noise</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     uploaded_file = st.file_uploader(
-        "Upload an image file (PNG, JPG, or JPEG)",
+        "Choose an image file",
         accept_multiple_files=False,
         type=["png", "jpg", "jpeg"],
     )
@@ -30,7 +80,7 @@ def render():
             original_image = Image.open(uploaded_file)
             image_cv = cv2.cvtColor(np.array(original_image), cv2.COLOR_RGB2BGR)
 
-            # Initialize session state for buttons
+            # Initialize session state
             if "extracted_text" not in st.session_state:
                 st.session_state.extracted_text = None
             if "text_extracted" not in st.session_state:
@@ -40,16 +90,27 @@ def render():
             if "preprocess_images" not in st.session_state:
                 st.session_state.preprocess_images = []
 
+            # Display original image with info
             st.image(
                 original_image,
                 caption="Uploaded Image",
                 width=300,
             )
 
-            # Preprocess Image
+            # Preprocess Section
             st.markdown("---")
-            if st.button("Preprocess Image"):
-                with st.spinner("Preprocessing image..."):
+            st.markdown("### STEP 1 🔍 Image Preprocessing")
+            st.markdown("""
+            Preprocessing helps improve text extraction accuracy by:
+            - Converting to grayscale to reduce complexity
+            - Applying noise reduction
+            - Enhancing contrast
+            - Sharpening details
+            - Thresholding for binary image
+            """)
+
+            if st.button("🔄 Start Preprocessing"):
+                with st.spinner("Applying image preprocessing techniques..."):
                     time.sleep(2)
                     extracted_text, preprocess_images = extract_text_from_image(
                         image_cv
@@ -57,96 +118,117 @@ def render():
                     st.session_state.preprocess_images = preprocess_images
                     st.session_state.extracted_text = extracted_text
 
-            # Display preprocessed images in three columns at a time
+            # Display preprocessed images with explanations
             step_names = [
-                "Grayscale",
-                "Blurred",
-                "Enhanced",
-                "Sharpened",
-                "Thresholded",
+                (
+                    "Grayscale",
+                    "Converts image to black and white for simpler processing",
+                ),
+                ("Blurred", "Reduces noise and smooths the image"),
+                ("Enhanced", "Improves contrast and clarity"),
+                ("Sharpened", "Emphasizes text edges"),
+                ("Thresholded", "Creates binary (black and white) image"),
             ]
 
-            # Ensure there are preprocessed images available to display
             if st.session_state.preprocess_images:
-                st.markdown("## Preprocessed Images")
+                st.markdown("### STEP 2 🖼️ Preprocessing Steps")
 
-                # Iterate over the images and display them in three columns per row
                 for i in range(0, len(step_names), 3):
-                    cols = st.columns(3)  # Create three columns per row
-
-                    # Loop through the columns and corresponding images
-                    for col, step_name, img in zip(
+                    cols = st.columns(3)
+                    for col, (step_name, description), img in zip(
                         cols,
                         step_names[i : i + 3],
                         st.session_state.preprocess_images[i : i + 3],
                     ):
                         with col:
-                            if img is not None:  # Ensure the image is not empty
+                            if img is not None:
                                 st.image(
                                     img,
-                                    caption=f"{step_name} Image",
+                                    caption=f"{step_name}",
                                     use_column_width=True,
                                 )
+                                st.info(description)
 
-            # Step 1: Extract Text
-            if (
-                st.session_state.preprocess_images
-                and len(st.session_state.preprocess_images) > 0
-            ):
+            # Text Extraction Section
+            if st.session_state.preprocess_images:
                 st.markdown("---")
-                if st.button("Extract Text"):
-                    with st.spinner("Extracting text..."):
-                        time.sleep(2)  # Simulate a delay for demonstration
-                        # extracted_text, _ = extract_text_from_image(image_cv)
+                st.markdown("### STEP 3 📝 Text Extraction")
+                st.markdown("""
+                Using Tesseract OCR engine to detect and extract text from the processed image.
+                The engine:
+                - Identifies text regions
+                - Recognizes individual characters
+                - Combines them into words and lines
+                """)
+
+                if st.button("📋 Extract Text"):
+                    with st.spinner("Running OCR process..."):
+                        time.sleep(2)
                         extracted_text = st.session_state.extracted_text
                         logging.info(f"Extracted data: {extracted_text}")
 
                     if extracted_text:
-                        # st.session_state.extracted_text = extracted_text
                         st.session_state.text_extracted = True
-                        st.session_state.text_parsed = False  # Reset parsing status
+                        st.session_state.text_parsed = False
 
-                # Display image and extracted text side by side after text extraction
                 if st.session_state.text_extracted and st.session_state.extracted_text:
-                    col1, col2 = st.columns(
-                        [1, 2]
-                    )  # Adjust column ratio (1:2 for wider text column)
-
+                    col1, col2 = st.columns([1, 2])
                     with col1:
                         st.image(
                             original_image,
-                            caption="Uploaded Image",
+                            caption="Original Image",
                             use_column_width=True,
                         )
-
                     with col2:
-                        st.subheader("Extracted Text")
+                        st.subheader("📄 Extracted Text")
                         st.markdown(f"```\n{st.session_state.extracted_text}\n```")
 
-            # Step 2: Parse Text with Regex
+            # Data Parsing Section
             if st.session_state.text_extracted:
                 st.markdown("---")
-                if st.button("Parse with Regex"):
-                    with st.spinner("Parsing text..."):
-                        time.sleep(2)  # Simulate a delay for parsing
+                st.markdown("### STEP 4 🔍 Data Parsing")
+                st.markdown("""
+                Using regular expressions (regex) to identify and extract specific patterns:
+                - Transaction dates
+                - Amount values
+                - Reference numbers
+                - Account details
+                """)
+
+                if st.button("🔍 Parse Data"):
+                    with st.spinner("Analyzing text patterns..."):
+                        time.sleep(2)
                         transaction_details = extract_transaction_data(
                             st.session_state.extracted_text
                         )
 
                     col1, col2 = st.columns([4, 3])
                     with col1:
-                        st.markdown("#### Extracted Text")
+                        st.markdown("#### 📑 Raw Extracted Text")
                         st.markdown(f"```\n{st.session_state.extracted_text}\n```")
 
                     with col2:
-                        st.markdown("#### Transaction Details")
+                        st.markdown("#### 📊 Structured Data")
                         if transaction_details:
                             for key, value in transaction_details.items():
                                 st.markdown(f"**{key}:** {value}")
                             st.session_state.text_parsed = True
                         else:
-                            st.warning("No details parsed from the text.")
+                            st.warning(
+                                "⚠️ No structured data could be parsed from the text."
+                            )
                             st.session_state.text_parsed = False
 
         except Exception as e:
-            st.error(f"Error processing the image: {e}")
+            st.error(f"⚠️ Error processing the image: {e}")
+
+    # Add footer with additional information
+    st.markdown("---")
+    st.markdown("""
+    ### 📚 Additional Information
+    - This demo uses OpenCV for image preprocessing
+    - Text extraction is powered by Tesseract OCR
+    - Regular expressions are used for structured data extraction
+    
+    For best results, ensure your images are clear and well-lit. The system works best with printed text rather than handwritten content.
+    """)

@@ -81,32 +81,44 @@ def load_cached_model(model_path: str):
 model = load_cached_model(model_dir)
 
 
+TEXT_EXTRACTION_PAGE = "Text Extraction"
+TRANSACTION_SUMMARY_PAGE = "Transaction Summary"
+IMAGE_CLASSIFICATION_PAGE = "Image Classification"
+
+PAGE_DESCRIPTIONS = {
+    TEXT_EXTRACTION_PAGE: "Demonstrates image to text extraction using Tesseract OCR, and text parsing with regex.",
+    IMAGE_CLASSIFICATION_PAGE: "Classifies images using a pre-trained VGG16 model with batch normalization. This model is fine-tuned to recognize specific classes relevant to the application.",
+    TRANSACTION_SUMMARY_PAGE: (
+        "Manually adding transaction screenshots? Let our app handle it! "
+        "With just two clicks, you can:\n\n"
+        "- Extract and Summarize Details from your mobile receipts instantly.\n"
+        "- Download a Ready-to-Use Excel Sheet with all your data.\n\n"
+        "Save time, reduce errors, and streamline your accounting in seconds!"
+    ),
+}
+
+
 def main():
     # Define the pages
     pages = {
-        "Image to Text Extraction Demo": text_extraction_page,
-        "Transaction Details Extractor": transaction_details_extractor,
-        "Image Classification": classification_page,  # Add the classification page
+        TEXT_EXTRACTION_PAGE: text_extraction_page,
+        IMAGE_CLASSIFICATION_PAGE: classification_page,
+        TRANSACTION_SUMMARY_PAGE: transaction_details_extractor,
     }
 
     st.sidebar.markdown("## SNAPSHEET")
     selected_page = st.sidebar.selectbox("Select a page", list(pages.keys()))
 
-    page_info = {
-        "Image to Text Extraction Demo": "Demonstrates image to text extraction using Tesseract OCR.",
-        "Transaction Details Extractor": "Extracts transaction details from images using OCR and displays them.",
-        "Image Classification": "Classifies images using a pre-trained model.",  # Add description
-    }
     st.sidebar.markdown("---")
-    st.sidebar.markdown(f"**Note:** {page_info[selected_page]}")
+    st.sidebar.markdown(f"**Note:** {PAGE_DESCRIPTIONS[selected_page]}")
 
     # Render the selected page
-    if selected_page == "Transaction Details Extractor":
+    if selected_page == TRANSACTION_SUMMARY_PAGE:
         transaction_details_extractor.render(model)
-    elif selected_page == "Image to Text Extraction Demo":
+    elif selected_page == TEXT_EXTRACTION_PAGE:
         text_extraction_page.render()
-    elif selected_page == "Image Classification":
-        classification_page.render(model)  # Render the classification page
+    elif selected_page == IMAGE_CLASSIFICATION_PAGE:
+        classification_page.render(model)
 
 
 if __name__ == "__main__":

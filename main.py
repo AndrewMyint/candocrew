@@ -87,7 +87,6 @@ def main():
         "Image to Text Extraction Demo": text_extraction_page,
         "Transaction Details Extractor": transaction_details_extractor,
         "Image Classification": classification_page,  # Add the classification page
-        "Demo Page": None,
     }
 
     st.sidebar.markdown("## SNAPSHEET")
@@ -97,7 +96,6 @@ def main():
         "Image to Text Extraction Demo": "Demonstrates image to text extraction using Tesseract OCR.",
         "Transaction Details Extractor": "Extracts transaction details from images using OCR and displays them.",
         "Image Classification": "Classifies images using a pre-trained model.",  # Add description
-        "Demo Page": "This is a demo page. Add your content here.",
     }
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"**Note:** {page_info[selected_page]}")
@@ -109,9 +107,6 @@ def main():
         text_extraction_page.render()
     elif selected_page == "Image Classification":
         classification_page.render(model)  # Render the classification page
-    elif selected_page == "Demo Page":
-        st.title("Demo Page")
-        st.write("This is a demo page. Add your content here.")
 
 
 if __name__ == "__main__":

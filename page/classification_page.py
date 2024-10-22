@@ -41,6 +41,16 @@ def render(model):
             if "predicted_class" not in st.session_state:
                 st.session_state.predicted_class = None
 
+            # Explanation of the classification process
+            st.markdown("### How Image Classification Works")
+            st.markdown("""
+                1. **Image Upload**: You upload an image file which is displayed above.
+                2. **Preprocessing**: The image is resized and normalized to fit the model's input requirements.
+                3. **Model Prediction**: The preprocessed image is fed into a pre-trained model to predict the class.
+                4. **Confidence Scores**: The model outputs scores for each class, which are visualized in a bar chart.
+                5. **Class Selection**: The class with the highest score is selected as the predicted class.
+            """)
+
             # Classify Image
             st.markdown("---")
             if st.button("Classify Image"):
@@ -69,10 +79,6 @@ def render(model):
                             ]
                         )
 
-                        # input_data = (
-                        #     img_transform(original_image).unsqueeze(0).to(device)
-                        # )
-
                         # Apply preprocessing
                         img_transform = img_transform(
                             original_image
@@ -82,7 +88,6 @@ def render(model):
                         # Make predictions
                         predicted = model(input_data)
 
-                        st.write("Input data shape:", input_data.shape)
                         st.write("Predicted scores:", predicted)
 
                         # Assuming predicted is a tensor of shape (1, num_classes)

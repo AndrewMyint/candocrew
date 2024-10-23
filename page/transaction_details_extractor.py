@@ -1,3 +1,4 @@
+import base64
 import io
 import logging
 
@@ -34,9 +35,9 @@ def render(model):
         }
         .payment-badge {
             display: inline-block;
-            padding: 0.4em 0.8em;
+            padding: 0.2em 0.4em;
             margin: 0.2em;
-            border-radius: 20px;
+            border-radius: 10px;
             font-weight: bold;
             background-color: #f0f2f6;
             color: #333;
@@ -52,15 +53,28 @@ def render(model):
         '<p class="subtitle">Your Go-To Solution for Organizing Mobile Receipts</p>',
         unsafe_allow_html=True,
     )
+    # <div style='display: flex; align-items: center; gap: 10px;'>
+    #     <img src='https://as2.ftcdn.net/v2/jpg/05/30/99/23/1000_F_530992386_EKRH5bJKgcj68ZI6FAXLS1rzpByqLi6R.jpg' width='40'/>
+    #     <h2>Image Classification</h2>
+    # </div>
 
-    # Supported Payment Methods
+    def img_to_base64(img_path):
+        with open(img_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode("utf-8")
+
+    # Get base64 encoded image
+    kpay_path = "assets/images/kbzpaylogo.png"
+    aya_path = "assets/images/ayapaylogo.png"
+    kpay_logo = img_to_base64(kpay_path)
+    aya_logo = img_to_base64(aya_path)
+
     st.markdown(
-        """
-    <div style='margin: 1em 0;'>
-        <span style='font-weight: bold;'>Supported Payment Methods:</span>
-        <span class='payment-badge'>🏦 KBZPay</span>
-        <span class='payment-badge'>💳 AYAPay</span>
-    </div>
+        f"""
+        <div style='margin: 1em 0;'>
+            <span style='font-weight: bold;'>Supported Payment Methods:</span>
+            <span class='payment-badge'><img src='data:image/png;base64,{kpay_logo}' width='20' alt='KBZPay Logo'/> KBZPay</span>
+            <span class='payment-badge'><img src='data:image/png;base64,{aya_logo}' width='20' alt='KBZPay Logo'/> AYAPay</span>
+        </div>
     """,
         unsafe_allow_html=True,
     )

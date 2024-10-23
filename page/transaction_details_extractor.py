@@ -159,12 +159,12 @@ def render(model):
             [
                 "Transaction Date",
                 "Transaction No",
+                "Payment Type",
                 "Sender Name",
                 "Receiver Name",
                 "Notes",
-                "image_file",
                 "Amount",
-                "Payment Type",
+                "image_file",
             ]
         ]
 
@@ -175,8 +175,8 @@ def render(model):
             "Payment Type",
             "Sender",
             "Receiver",
-            "Amount",
             "Notes",
+            "Amount",
             "Image File",
         ]
 
@@ -209,7 +209,8 @@ def render(model):
         col1, col2, col3 = st.columns(3)
         with col1:
             total_amount = df["Amount"].sum()
-            st.metric("Total Amount", f"MMK{total_amount:,.2f}")
+            formatted_amount = f"MMK {total_amount:,.0f}"  # Removed .2f to show full number without decimals
+            st.metric("Total Amount", formatted_amount)
         with col2:
             transaction_count = len(df)
             st.metric("Total Transactions", transaction_count)

@@ -58,7 +58,8 @@ def extract_text_from_image(image):
         # Convert back to a PIL image
         pil_image = Image.fromarray(thresh)
 
-        config = "--pstm 6 --oem 3"
+        config = "--psm 6 --oem 3"
+        # config = "--psm 6"
         # Use Tesseract to do OCR on the image
         text = pyt.image_to_string(pil_image, config=config, lang="eng")
         return text, [

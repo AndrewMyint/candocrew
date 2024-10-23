@@ -101,9 +101,9 @@ PAGE_DESCRIPTIONS = {
 def main():
     # Define the pages
     pages = {
+        TRANSACTION_SUMMARY_PAGE: transaction_details_extractor,
         TEXT_EXTRACTION_PAGE: text_extraction_page,
         IMAGE_CLASSIFICATION_PAGE: classification_page,
-        TRANSACTION_SUMMARY_PAGE: transaction_details_extractor,
     }
 
     st.sidebar.markdown("## SNAPSHEET")

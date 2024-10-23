@@ -157,13 +157,13 @@ def render(model):
         # Rename and format columns
         df.columns = [
             "Transaction Date",
-            "Transaction Number",
+            "Transaction No",
+            "Payment Type",
             "Sender",
             "Receiver",
+            "Amount",
             "Notes",
             "Image File",
-            "Amount",
-            "Payment Type",
         ]
 
         df["Amount"] = pd.to_numeric(
@@ -174,19 +174,19 @@ def render(model):
         st.dataframe(
             df,
             column_config={
-                "Transaction Date": st.column_config.DateColumn("Date"),
-                "Transaction Number": "Number",
-                "Sender": "From",
-                "Receiver": "To",
+                "Transaction Date": st.column_config.DateColumn("Transaction Date"),
+                "Transaction No": "Transaction No",
+                "Payment Type": "Payment Type",
+                "Sender": "Sender",
+                "Receiver": "Receiver",
                 "Notes": "Notes",
-                "Image File": "File",
                 "Amount": st.column_config.NumberColumn(
                     "Amount",
                     help="Transaction amount in currency",
                     format="%.2f",
                     min_value=0.0,
                 ),
-                "Payment Type": "Type",
+                "Image File": "Image File",
             },
             hide_index=True,
         )
@@ -195,7 +195,7 @@ def render(model):
         col1, col2, col3 = st.columns(3)
         with col1:
             total_amount = df["Amount"].sum()
-            st.metric("Total Amount", f"${total_amount:,.2f}")
+            st.metric("Total Amount", f"MMK{total_amount:,.2f}")
         with col2:
             transaction_count = len(df)
             st.metric("Total Transactions", transaction_count)

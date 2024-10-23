@@ -16,26 +16,21 @@ logging.basicConfig(
 
 
 def render(model):
-    st.markdown("""
-        ## 🖼️ Image Classification
-        Using VGG16 with Batch Normalization
-    """)
+    # st.markdown("""
+    #     ## 🖼️ Image Classification
+    #     Using VGG16 with Batch Normalization
+    # """)
+    st.markdown(
+        """
+        <div style='display: flex; align-items: center; gap: 10px;'>
+            <img src='https://as2.ftcdn.net/v2/jpg/05/30/99/23/1000_F_530992386_EKRH5bJKgcj68ZI6FAXLS1rzpByqLi6R.jpg' width='40'/>
+            <h2>Image Classification</h2>
+        </div>
+        <span>Using VGG16 with Batch Normalization</span>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # # Supported Payment Methods
-    # st.markdown(
-    #     """
-    # <div style='margin: 1em 0;'>
-    #     <span style='font-weight: bold;'>Supported Payment Methods:</span>
-    #     <span class='payment-badge'> KBZPay</span>
-    #     <span class='payment-badge'> AYAPay</span>
-    #     <span class='payment-badge'> CBPay</span>
-    #     <span class='payment-badge'> WaveMoney</span>
-    # </div>
-    # """,
-    #     unsafe_allow_html=True,
-    # )
-
-    # Model Architecture Information
     with st.expander("ℹ️ About the Model"):
         st.markdown("""
             ### Model Architecture
@@ -108,6 +103,8 @@ def render(model):
                     model = model.to(device)
                     model.eval()
 
+                    image_rgb = original_image.convert("RGB")
+
                     with torch.no_grad():
                         # Preprocessing pipeline
                         img_transform = transforms.Compose(
@@ -123,7 +120,7 @@ def render(model):
                         )
 
                         # Transform and predict
-                        img_transform = img_transform(original_image)
+                        img_transform = img_transform(image_rgb)
                         input_data = img_transform.unsqueeze(0)
                         predicted = model(input_data)
 

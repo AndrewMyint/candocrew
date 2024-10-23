@@ -37,28 +37,16 @@ def render():
     3. **Data Parsing**: Structured information extraction using regex patterns
     """)
 
-    # # Supported Payment Methods
-    # st.markdown(
-    #     """
-    # <div style='margin: 1em 0;'>
-    #     <span style='font-weight: bold;'>Supported Payment Methods:</span>
-    #     <span class='payment-badge'>🏦 KBZPay</span>
-    #     <span class='payment-badge'>💳 AYAPay</span>
-    # </div>
-    # """,
-    #     unsafe_allow_html=True,
-    # )
-
     st.markdown("---")
 
     # File Upload Section with Information
     st.markdown(
         """
-        <div style='background-color: rgba(61, 157, 243, 0.2); color: rgb(199, 235, 255); padding: 20px; border-radius: 10px;'>
-            <h4>📁 Upload Your Image</h4>
-            <p>Support formats: PNG, JPG, or JPEG</p>
-            <p>For best results, ensure your image:</p>
-            <ul>
+        <div style='background-color: rgba(61, 157, 243, 0.1); padding: 20px; border-radius: 10px; border: 1px solid rgba(61, 157, 243, 0.3);'>
+            <h4 style='color: var(--text-color, currentColor);'>📁 Upload Your Image</h4>
+            <p style='color: var(--text-color, currentColor);'>Support formats: PNG, JPG, or JPEG</p>
+            <p style='color: var(--text-color, currentColor);'>For best results, ensure your image:</p>
+            <ul style='color: var(--text-color, currentColor);'>
                 <li>Has good lighting and contrast</li>
                 <li>Text is clearly visible</li>
                 <li>Minimal background noise</li>

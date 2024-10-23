@@ -58,8 +58,8 @@ def extract_text_from_image(image):
         # Convert back to a PIL image
         pil_image = Image.fromarray(thresh)
 
+        config = "--pstm 6 --oem 3"
         # Use Tesseract to do OCR on the image
-        config = "--psm 6"
         text = pyt.image_to_string(pil_image, config=config, lang="eng")
         return text, [
             gray,
@@ -84,11 +84,22 @@ def split_text_into_lines(text):
     lines = text.split("\n")
     return [line.strip() for line in lines if line.strip()]
 
+
 MONTH_CORRECTIONS = {
-    "Janury": "January", "Februry": "February", "Marh": "March", "Aplil": "April", 
-    "Mayy": "May", "Juen": "June", "Jully": "July", "Agust": "August", 
-    "Septmber": "September", "Octaber": "October", "Novmber": "November", "Decmber": "December"
+    "Janury": "January",
+    "Februry": "February",
+    "Marh": "March",
+    "Aplil": "April",
+    "Mayy": "May",
+    "Juen": "June",
+    "Jully": "July",
+    "Agust": "August",
+    "Septmber": "September",
+    "Octaber": "October",
+    "Novmber": "November",
+    "Decmber": "December",
 }
+
 
 def correct_month_in_string(date_string):
     for incorrect_month, correct_month in MONTH_CORRECTIONS.items():
@@ -96,9 +107,11 @@ def correct_month_in_string(date_string):
             return date_string.replace(incorrect_month, correct_month)
     return date_string
 
+
 def spell_check_string(text):
     corrected_text = str(TextBlob(text).correct())
     return corrected_text
+
 
 def extract_date_time(date_time_str):
     """
@@ -107,10 +120,10 @@ def extract_date_time(date_time_str):
     :param date_time_str: String containing date and time
     :return: Formatted date and time
     """
-    
+
     date_time_str = correct_month_in_string(date_time_str)
     date_time_str = spell_check_string(date_time_str)
-    
+
     date_pattern = re.compile(
         r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2} \w+ \d{4}|\w+ \d{1,2}, \d{4})"
     )

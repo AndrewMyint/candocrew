@@ -9,6 +9,8 @@ def processing_image(image_path):
     # Load the image
     img = Image.open(image_path)
 
+    img = img.convert("RGB")
+
     # Define preprocessing steps
     img_transform = transforms.Compose(
         [

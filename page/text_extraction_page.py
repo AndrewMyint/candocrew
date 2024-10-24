@@ -177,10 +177,13 @@ def render():
                 st.markdown("### STEP 4 🔍 Data Parsing")
                 st.markdown("""
                 Using regular expressions (regex) to identify and extract specific patterns:
-                - Transaction dates
-                - Amount values
-                - Reference numbers
-                - Account details
+                - Transaction No
+                - Transaction Date
+                - Transaction Type
+                - Sender Name
+                - Amount
+                - Receiver Name
+                - Notes
                 """)
 
                 if st.button("🔍 Parse Data"):

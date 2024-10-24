@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import streamlit as st
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from PIL import Image
 
@@ -135,8 +136,14 @@ def render(model):
                         st.bar_chart(df)
 
                         # Get and display predicted class
-                        _, pred_label = torch.max(predicted, 1)
-                        label_name = CLASS_LABELS[pred_label.item()]
+                        # _, pred_label = torch.max(predicted, 1)
+                        # label_name = CLASS_LABELS[pred_label.item()]
+                        probabilities = F.softmax(predicted, dim=1)
+
+                        # After applying softmax, the probabilities do not sum to 1. Normalize them
+                        predicted_class_index = torch.max(probabilities, dim=1)[1]
+                        label_name = CLASS_LABELS[predicted_class_index.item()]
+
                         st.session_state.predicted_class = label_name
                         logging.info(f"Predicted class: {label_name}")
 

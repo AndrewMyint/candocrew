@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from PIL import Image
 
@@ -58,10 +59,13 @@ def predict_class(model, uploaded_file, class_names):
         predicted = model(input_data)
 
         # Get the predicted class
-        _, pred_label = torch.max(predicted, 1)
+        probabilities = F.softmax(predicted, dim=1)
+
+        # After applying softmax, the probabilities do not sum to 1. Normalize them
+        predicted_class_index = torch.max(probabilities, dim=1)[1]
 
         # Convert index to class name
-        label_name = class_names[pred_label.item()]
+        label_name = class_names[predicted_class_index.item()]
 
         # Display the image
         img = Image.open(uploaded_file)

@@ -5,8 +5,6 @@ opencv-python-headless
 pytesseract
 Pillow
 XlsxWriter
-keras
-tensorflow
 gdown
 python-dotenv
 matplotlib

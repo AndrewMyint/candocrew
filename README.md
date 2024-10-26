@@ -18,7 +18,7 @@ This Streamlit application extracts transaction details from uploaded image file
 - [Streamlit](https://streamlit.io/)
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) installed and configured
 - [gdown](https://pypi.org/project/gdown/) for downloading files from Google Drive
-- [Keras](https://keras.io/) and [TensorFlow](https://www.tensorflow.org/) for model loading
+- [pytorch](https://pytorch.org/docs/stable/index.html)
 
 ### Installation
 
@@ -71,7 +71,7 @@ This Streamlit application extracts transaction details from uploaded image file
 ## Model File
 
 - The current model file can be accessed and downloaded from Google Drive using the following link:
-  [Model File](https://drive.google.com/file/d/1aXlpnWGK5PPCuFvu7zJezPAmsR3wmdYe/view?usp=sharing)
+  [Model File](https://drive.google.com/file/d/13cggBU0_JxeiwFeg86Kwp9Ql1xqojrXa/view?usp=sharing)
 
 ## Logging
 

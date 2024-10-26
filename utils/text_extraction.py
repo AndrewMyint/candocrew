@@ -15,9 +15,11 @@ patterns = {
     "transaction_time": re.compile(
         r"^(Transaction Time|Date and Time|Date & Time|Transaction Date)\s?:?\s?(.+)"
     ),
-    "transaction_no": re.compile(r"^(Transaction No.|Transaction ID)\s?:?\s?(.+)"),
-    "receiver": re.compile(r"^(To|Receiver Name|Send To|Transfer To)\s?:?\s?(.+)"),
-    "sender": re.compile(r"^(From|Sender Name|Send From|Transfer From)\s?:?\s?(.+)"),
+    "transaction_no": re.compile(
+        r"^(Transaction No.|Transaction ID|Transaction Code)\s?:?\s?(.+)"
+    ),
+    "receiver": re.compile(r"^(Receiver Name|Send To|Transfer To)\s?:?\s?(.+)"),
+    "sender": re.compile(r"^(Sender Name|Send From|Transfer From)\s?:?\s?(.+)"),
     "amount_data": re.compile(
         r"^(Amount|Total Amount|Total)\s*[:\-–—]?\s*(.+)"
     ),  # [:\-–—]?: Matches an optional colon, dash, en dash, or em dash.
@@ -40,7 +42,7 @@ def extract_text_from_image(image):
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
 
         # Increase contrast using adaptive histogram equalization (CLAHE)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=10, tileGridSize=(8, 8))
 
         logging.info(f"Enhancing image using CLAHE {clahe}")
 
